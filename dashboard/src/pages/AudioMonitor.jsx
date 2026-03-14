@@ -99,10 +99,9 @@ const AudioMonitor = () => {
 
   const fetchUsers = async () => {
     try {
-      const users = await apiService.getUsers();
-      if (Array.isArray(users)) {
-        setActiveUsers(users);
-      }
+      const data = await apiService.getUsers();
+      const users = data?.users || (Array.isArray(data) ? data : []);
+      setActiveUsers(users);
     } catch (err) {
       logger.error('Failed fetching users for audio monitor', err);
     }

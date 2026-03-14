@@ -25,8 +25,9 @@ const ScreenViewer = () => {
 
   const fetchActiveUsers = async () => {
     try {
-      const activeUsers = await apiService.getUsers();
-      if (Array.isArray(activeUsers)) setUsers(activeUsers);
+      const data = await apiService.getUsers();
+      const activeUsers = data?.users || (Array.isArray(data) ? data : []);
+      setUsers(activeUsers);
     } catch (err) {
       logger.error('Failed fetching users for screen view:', err);
     }
