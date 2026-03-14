@@ -12,25 +12,30 @@ import { Platform } from 'react-native';
 // Android emulator uses 10.0.2.2 to reach host machine localhost.
 // Physical devices should use your machine's LAN IP.
 // Override via Expo's extra config if needed.
+// ─── Environment URLs ───────────────────────────────────────────
+const PROD_URL = 'https://spy-backend-yk4g.onrender.com';
+const DEV_URL = (() => {
+  const LOCAL_IP = '10.18.45.167'; // 🚨 Must match your laptop's IPv4
+  return Platform.select({
+    android: `http://${LOCAL_IP}:5000`,
+    ios: `http://${LOCAL_IP}:5000`,
+    default: `http://${LOCAL_IP}:5000`,
+  });
+})();
+
 const getBaseUrl = () => {
+  // 1. Manual override via Expo extra config (if using app.json)
   const extra = Constants.expoConfig?.extra;
   if (extra?.API_URL) return extra.API_URL;
 
+  // 2. Automated switching between Dev and Prod
   if (__DEV__) {
-    // ⚠️ CRITICAL FIX for "Request failed with status code 418" ERROR:
-    // This exact IP must exactly match your laptop's current IPv4 address
-    // and backend MUST be running on port 5000.
-    // If it hits port 8081 (Expo), Expo will return 418 Teapot!
-    const LOCAL_IP = '10.18.45.167'; 
-    
-    return Platform.select({
-      android: `http://${LOCAL_IP}:5000`,
-      ios: `http://${LOCAL_IP}:5000`,
-      default: `http://${LOCAL_IP}:5000`,
-    });
+    // Return DEV_URL by default in development mode
+    return DEV_URL;
   }
 
-  return 'https://your-production-server.com';
+  // 3. Fallback to Production
+  return PROD_URL;
 };
 
 export const BASE_URL = getBaseUrl();
