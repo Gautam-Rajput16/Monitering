@@ -9,16 +9,6 @@ import { logger } from '../utils/logger';
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
 const LocationMonitor = () => {
-  // Defensive check for Mapbox token
-  useEffect(() => {
-    const token = import.meta.env.VITE_MAPBOX_TOKEN;
-    if (token) {
-      mapboxgl.accessToken = token;
-    } else {
-      console.error('Mapbox token is missing! Please check your dashboard/.env file.');
-    }
-  }, []);
-
   const mapContainer = useRef(null);
   const map = useRef(null);
   const markersRef = useRef({});
@@ -38,21 +28,36 @@ const LocationMonitor = () => {
   });
 
   useEffect(() => {
-    // Initialize map only once
+    // 1. Get token from environment
+    const token = import.meta.env.VITE_MAPBOX_TOKEN;
+    
+    // 2. Safe debug logging (only log first 10 chars)
+    if (token) {
+      console.log('Mapbox token detected:', token.substring(0, 10) + '...');
+      mapboxgl.accessToken = token;
+    } else {
+      console.error('CRITICAL: Mapbox token is missing!');
+      return;
+    }
+
+    // 3. Initialize map only once
     if (map.current) return;
     
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11', // Matches dashboard aesthetic
-      center: [-98.5795, 39.8283], // Default center (US)
-      zoom: 3
+    try {
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/dark-v11',
+        center: [-98.5795, 39.8283],
+        zoom: 3
     });
 
-    // Add navigation controls (zoom in/out)
+    // Add navigation controls
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-    // Fetch initial active locations (Assumed endpoint handled in API Service)
     fetchInitialLocations();
+    } catch (err) {
+      console.error('Mapbox initialization failed:', err);
+    }
 
     return () => {
       if (map.current) {
