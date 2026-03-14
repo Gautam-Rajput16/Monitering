@@ -1,18 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { useSocket } from '../hooks/useSocket';
 import { apiService } from '../services/apiService';
 import { logger } from '../utils/logger';
-
-// Token will be assigned inside the component to ensure it's picked up correctly
-mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
 const LocationMonitor = () => {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const markersRef = useRef({});
-  const [usersInfo, setUsersInfo] = useState({});
   const [selectedUser, setSelectedUser] = useState(null);
 
   // Use our custom socket hook to listen for 'location-update' emitted by the backend
@@ -22,42 +18,30 @@ const LocationMonitor = () => {
       updateUserLocation(data.userId, data.latitude, data.longitude, data.timestamp);
     },
     'user-disconnected': (data) => {
-      // Cleanup marker if user fully disconnects (optional based on requirements)
       removeUserMarker(data.userId);
     }
   });
 
   useEffect(() => {
-    // 1. Get token from environment
-    const token = import.meta.env.VITE_MAPBOX_TOKEN;
-    
-    // 2. Safe debug logging (only log first 10 chars)
-    if (token) {
-      console.log('Mapbox token detected:', token.substring(0, 10) + '...');
-      mapboxgl.accessToken = token;
-    } else {
-      console.error('CRITICAL: Mapbox token is missing!');
-      return;
-    }
-
-    // 3. Initialize map only once
+    // Initialize map only once
     if (map.current) return;
     
-    try {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/dark-v11',
-        center: [-98.5795, 39.8283],
-        zoom: 3
+    // Initialize Leaflet map
+    map.current = L.map(mapContainer.current, {
+      center: [20.5937, 78.9629], // Default center (India)
+      zoom: 5,
+      zoomControl: false
     });
 
-    // Add navigation controls
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    // Add OpenStreetMap tiles (Free)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map.current);
+
+    // Add zoom control manually to top-right to match previous UI
+    L.control.zoom({ position: 'topright' }).addTo(map.current);
 
     fetchInitialLocations();
-    } catch (err) {
-      console.error('Mapbox initialization failed:', err);
-    }
 
     return () => {
       if (map.current) {
@@ -70,13 +54,10 @@ const LocationMonitor = () => {
   const fetchInitialLocations = async () => {
     try {
       const users = await apiService.getUsers(); 
-      // Iterate over active users and fetch their last known location
-      // Simplified for demo: assume getUsers returns { id, name, location: { latitude, longitude } }
       if (Array.isArray(users)) {
          users.forEach(u => {
            if (u.location) {
              updateUserLocation(u.id, u.location.latitude, u.location.longitude, Date.now());
-             setUsersInfo(prev => ({ ...prev, [u.id]: u }));
            }
          });
       }
@@ -96,41 +77,38 @@ const LocationMonitor = () => {
     if (!map.current) return;
 
     if (markersRef.current[userId]) {
-      // Marker exists, smoothly animate to new location
-      markersRef.current[userId].setLngLat([lng, lat]);
+      // Marker exists, update position
+      markersRef.current[userId].setLatLng([lat, lng]);
     } else {
-      // Create a custom HTML element for the marker to fit our dark UI
-      const el = document.createElement('div');
-      el.className = 'w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-[0_0_10px_rgba(59,130,246,0.8)] cursor-pointer transition-transform hover:scale-125';
-      
-      el.addEventListener('click', () => {
-        handleMarkerClick(userId);
+      // Create a custom DivIcon to match the previous premium look
+      const customIcon = L.divIcon({
+        className: 'custom-leaflet-marker',
+        html: `<div class="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-[0_0_10px_rgba(59,130,246,0.8)] cursor-pointer transition-transform hover:scale-125"></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
       });
 
-      // Create new marker
-      markersRef.current[userId] = new mapboxgl.Marker({ element: el })
-        .setLngLat([lng, lat])
-        .addTo(map.current);
+      const marker = L.marker([lat, lng], { icon: customIcon })
+        .addTo(map.current)
+        .on('click', () => handleMarkerClick(userId));
+
+      markersRef.current[userId] = marker;
     }
   };
 
   const handleMarkerClick = async (userId) => {
     try {
-      // Fetch user details when a marker is clicked
       const userDetails = await apiService.getUserDetails(userId);
       setSelectedUser(userDetails || { id: userId, name: `User ${userId}`, status: 'Active' });
       
-      // Pan camera smoothly to user
       const marker = markersRef.current[userId];
       if (marker) {
-        map.current.flyTo({
-          center: marker.getLngLat(),
-          zoom: 14,
-          essential: true
+        map.current.flyTo(marker.getLatLng(), 14, {
+          duration: 1.5,
+          easeLinearity: 0.25
         });
       }
     } catch (err) {
-      // Fallback
       setSelectedUser({ id: userId, name: `User ${userId}`, status: 'Active' });
     }
   };
@@ -145,13 +123,13 @@ const LocationMonitor = () => {
         </div>
       </div>
       
-      <div className="flex-1 rounded-xl border border-gray-700 overflow-hidden relative flex">
+      <div className="flex-1 rounded-xl border border-gray-700 overflow-hidden relative flex bg-gray-900">
         {/* Map Container */}
-        <div ref={mapContainer} className="w-full h-full bg-gray-900" />
+        <div ref={mapContainer} className="w-full h-full" id="map" />
         
         {/* User Detail Overlay panel */}
         {selectedUser && (
-          <div className="absolute top-4 left-4 w-72 bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg p-5 shadow-2xl z-10">
+          <div className="absolute top-4 left-4 w-72 bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg p-5 shadow-2xl z-[1000]">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-lg font-bold text-white">{selectedUser.name || 'Unknown User'}</h3>
               <button 
