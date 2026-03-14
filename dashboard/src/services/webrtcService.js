@@ -89,47 +89,53 @@ class WebRTCService {
   }
 
   async handleOffer(offerData, isAudioOnly = false) {
-    const { userId, sdp } = offerData;
+    const { fromUserId, offer, sessionId } = offerData;
     try {
-      logger.webrtc(`Handling WebRTC Offer from ${userId}`);
-      const pc = this.createPeerConnection(userId, isAudioOnly);
+      logger.webrtc(`Handling WebRTC Offer from ${fromUserId}`, { sessionId });
+      const pc = this.createPeerConnection(fromUserId, isAudioOnly);
       
-      await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp }));
+      // The offer object contains { type, sdp }
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
       
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
 
       // Send Answer back through backend to mobile
       socketService.emit('webrtc-answer', {
-        targetUserId: userId,
-        sdp: pc.localDescription.sdp,
+        targetUserId: fromUserId,
+        answer: {
+          type: pc.localDescription.type,
+          sdp: pc.localDescription.sdp
+        },
+        sessionId,
       });
-      logger.webrtc(`Sent WebRTC Answer to ${userId}`);
+      logger.webrtc(`Sent WebRTC Answer to ${fromUserId}`);
       
     } catch (error) {
-      logger.error(`Error handling offer from ${userId}:`, error);
+      logger.error(`Error handling offer from ${fromUserId}:`, error);
     }
   }
 
   async handleIceCandidate(candidateData) {
-    const { userId, candidate } = candidateData;
-    const pc = this.peerConnections.get(userId);
+    const { fromUserId, candidate, sessionId } = candidateData;
+    const pc = this.peerConnections.get(fromUserId);
     if (!pc) {
-      logger.warn(`Received ICE candidate for ${userId} but no PeerConnection exists.`);
+      logger.warn(`Received ICE candidate for ${fromUserId} but no PeerConnection exists.`);
       return;
     }
 
     try {
       await pc.addIceCandidate(new RTCIceCandidate(candidate));
-      logger.webrtc(`Added remote ICE candidate from ${userId}`);
+      logger.webrtc(`Added remote ICE candidate from ${fromUserId}`);
     } catch (error) {
-      logger.error(`Error adding ICE candidate from ${userId}:`, error);
+      logger.error(`Error adding ICE candidate from ${fromUserId}:`, error);
     }
   }
 
   closeConnection(userId) {
     const pc = this.peerConnections.get(userId);
     if (pc) {
+      // Send a signal to other peer if possible? Usually stream-stop handles it.
       pc.close();
       this.peerConnections.delete(userId);
     }

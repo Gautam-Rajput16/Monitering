@@ -71,15 +71,26 @@ const signalingHandler = (io, socket) => {
 
     const onStreamStart = async (data, callback) => {
         try {
-            const { streamType } = data || {};
+            const { streamType, userId: targetUserId } = data || {};
 
             if (!streamType || !['camera', 'screen', 'audio'].includes(streamType)) {
                 return callback?.({ success: false, message: 'Invalid stream type' });
             }
 
-            const session = await streamService.createSession({ userId, streamType });
+            // Case A: Admin requesting a stream from a mobile device
+            if (role === 'admin' && targetUserId) {
+                const { isOnline, room } = getTargetInfo(targetUserId);
+                if (!isOnline) {
+                    return callback?.({ success: false, message: 'User is offline' });
+                }
 
-            // Join a signaling room scoped to this session
+                logger.stream(`Admin requesting ${streamType} from ${targetUserId}`);
+                io.to(room).emit('stream-request', { streamType, fromUserId: userId });
+                return callback?.({ success: true, message: 'Request sent to device' });
+            }
+
+            // Case B: Mobile device starting its own stream
+            const session = await streamService.createSession({ userId, streamType });
             socket.join(`signal:${session.sessionId}`);
 
             logger.stream(`Stream started: ${streamType}`, {

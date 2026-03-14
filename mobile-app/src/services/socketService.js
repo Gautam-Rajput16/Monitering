@@ -238,6 +238,14 @@ export const onStreamStopped = (callback) => {
   return () => socket?.off('stream-stopped', callback);
 };
 
+/**
+ * Listen for stream request events (from admin dashboard).
+ */
+export const onStreamRequest = (callback) => {
+  socket?.on('stream-request', callback);
+  return () => socket?.off('stream-request', callback);
+};
+
 export default {
   connect,
   disconnect,

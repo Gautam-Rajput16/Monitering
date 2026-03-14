@@ -97,30 +97,8 @@ const useWebRTC = () => {
           sessionId,
         });
 
-        // 6. Listen for answer from admin
-        const unsubAnswer = socketService.onWebRTCAnswer((data) => {
-          if (data.sessionId === sessionId) {
-            webrtcService.handleAnswer(streamType, data.answer);
-          }
-        });
-
-        // 7. Listen for ICE candidates from admin
-        const unsubIce = socketService.onICECandidate((data) => {
-          if (data.sessionId === sessionId) {
-            webrtcService.addIceCandidate(streamType, data.candidate);
-          }
-        });
-
-        const unsubIceBatch = socketService.onICECandidatesBatch((data) => {
-          if (data.sessionId === sessionId) {
-            data.candidates.forEach((candidate) => {
-              webrtcService.addIceCandidate(streamType, candidate);
-            });
-          }
-        });
-
-        // Store cleanup refs
-        cleanupRefs.current.push(unsubAnswer, unsubIce, unsubIceBatch);
+        // Store cleanup refs — these were session-specific, but now we use global listeners
+        // cleanupRefs.current.push(unsubAnswer, unsubIce, unsubIceBatch);
 
         // 8. Update global state
         dispatch({
@@ -188,6 +166,55 @@ const useWebRTC = () => {
     }
   }, [state.streams, stopStream]);
 
+  // ── Remote Stream Requests ──────────────────────────────────
+  useEffect(() => {
+    const unsub = socketService.onStreamRequest((data) => {
+      const { streamType } = data;
+      logger.stream(`Remote stream request received: ${streamType}`);
+      startStream(streamType).catch((err) => {
+        logger.error(`Failed to handle remote stream request: ${err.message}`);
+      });
+    });
+
+    return () => unsub?.();
+  }, [startStream]);
+
+  // ── Standardized Signaling ──────────────────────────────────
+  useEffect(() => {
+    // Override existing listeners to support standardized fromUserId
+    const unsubAnswer = socketService.onWebRTCAnswer((data) => {
+      // Backend standard: { fromUserId, answer, sessionId }
+      const activeSession = Object.entries(state.streams).find(([_, s]) => s.sessionId === data.sessionId);
+      if (activeSession) {
+        webrtcService.handleAnswer(activeSession[0], data.answer);
+      }
+    });
+
+    const unsubIce = socketService.onICECandidate((data) => {
+      const activeSession = Object.entries(state.streams).find(([_, s]) => s.sessionId === data.sessionId);
+      if (activeSession) {
+        webrtcService.addIceCandidate(activeSession[0], data.candidate);
+      }
+    });
+
+    const unsubIceBatch = socketService.onICECandidatesBatch((data) => {
+      const activeSession = Object.entries(state.streams).find(([_, s]) => s.sessionId === data.sessionId);
+      if (activeSession) {
+        data.candidates.forEach((candidate) => {
+          webrtcService.addIceCandidate(activeSession[0], candidate);
+        });
+      }
+    });
+
+    cleanupRefs.current.push(unsubAnswer, unsubIce, unsubIceBatch);
+
+    return () => {
+      unsubAnswer?.();
+      unsubIce?.();
+      unsubIceBatch?.();
+    };
+  }, [state.streams]); // Update when sessions change
+
   // ── Cleanup on unmount ────────────────────────────────────────
   useEffect(() => {
     return () => {
@@ -195,7 +222,6 @@ const useWebRTC = () => {
       webrtcService.closeAllConnections();
     };
   }, []);
-
   return {
     streams: state.streams,
     startStream,

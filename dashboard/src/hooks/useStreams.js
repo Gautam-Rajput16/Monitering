@@ -9,18 +9,12 @@ export const useStreams = (userId, type = 'camera') => {
   // Hook into socket events to trigger WebRTC lifecycle
   const { emit } = useSocket({
     'webrtc-offer': (data) => {
-       // Filter offers by the target user ID and stream type 
-       // If the backend passes track type in the socket data, verify it here.
-       // Defaulting to only handling offers for our selected user.
-       if (data.userId === userId) {
+       if (data.fromUserId === userId) {
          webrtcService.handleOffer(data, type === 'audio');
        }
     },
-    'webrtc-answer': (data) => {
-       // As receivers we usually only send answers, but if we sent an offer, we handle answers here
-    },
     'ice-candidate': (data) => {
-       if (data.userId === userId) {
+       if (data.fromUserId === userId) {
           webrtcService.handleIceCandidate(data);
        }
     },
