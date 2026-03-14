@@ -1,6 +1,12 @@
-// Base configuration for API
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+// ─── Environment URLs ───────────────────────────────────────────
+const PROD_URL = 'https://spy-backend-yk4g.onrender.com';
+const DEV_URL = 'http://localhost:5000';
+
+// Automatic switching based on development vs production build
+const BASE_URL = import.meta.env.DEV ? DEV_URL : PROD_URL;
+
+export const API_URL = `${BASE_URL}/api`;
+export const SOCKET_URL = BASE_URL;
 
 export const ENDPOINTS = {
   AUTH: {
