@@ -126,8 +126,16 @@ app.use(morgan(morganFormat, {
 }));
 
 // ═══════════════════════════════════════════════════════════════
-//  7. HEALTH CHECK
+//  7. ROOT & HEALTH CHECK
 // ═══════════════════════════════════════════════════════════════
+
+app.get('/', (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: 'SPY API is live',
+        documentation: 'https://github.com/Gautam-Rajput16/Monitering',
+    });
+});
 
 app.get('/api/health', (req, res) => {
     res.status(200).json({
