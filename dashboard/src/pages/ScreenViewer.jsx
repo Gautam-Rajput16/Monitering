@@ -59,7 +59,7 @@ const ScreenViewer = () => {
             >
               <option value="" disabled>-- Select Device --</option>
               {users.map(u => (
-                 <option key={u.id} value={u.id}>{u.name || u.id}</option>
+                 <option key={u.userId || u.id} value={u.userId || u.id}>{u.name || u.email || u.userId}</option>
               ))}
             </select>
             <button onClick={fetchActiveUsers} className="p-2 bg-gray-800 rounded border border-gray-700 hover:bg-gray-700">
@@ -67,15 +67,15 @@ const ScreenViewer = () => {
             </button>
         </div>
       </div>
-
+ 
       <div className="flex-1 bg-gray-800 rounded-xl border border-gray-700 p-4 flex flex-col">
          {selectedUserId ? (
            <div className="flex-1 flex flex-col space-y-4">
-             <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium text-white flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${stream ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
-                  Target: {users.find(u => u.id === selectedUserId)?.name || selectedUserId}
-                </h3>
+              <div className="flex justify-between items-center">
+                 <h3 className="text-lg font-medium text-white flex items-center gap-2">
+                   <span className={`w-2 h-2 rounded-full ${stream ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
+                   Target: {users.find(u => (u.userId || u.id) === selectedUserId)?.email || selectedUserId}
+                 </h3>
                 
                 <div className="flex items-center gap-4">
                   {error && <span className="text-red-400 text-sm">{error}</span>}

@@ -17,8 +17,9 @@ const CameraViewer = () => {
 
   const fetchActiveUsers = async () => {
     try {
-      const activeUsers = await apiService.getUsers();
-      if (Array.isArray(activeUsers)) setUsers(activeUsers);
+      const data = await apiService.getUsers();
+      const activeUsers = data?.users || (Array.isArray(data) ? data : []);
+      setUsers(activeUsers);
     } catch (err) {
       logger.error('Failed fetching users for camera view:', err);
     }
@@ -37,7 +38,7 @@ const CameraViewer = () => {
             >
               <option value="" disabled>-- Select Device --</option>
               {users.map(u => (
-                 <option key={u.id} value={u.id}>{u.name || u.id}</option>
+                 <option key={u.userId || u.id} value={u.userId || u.id}>{u.name || u.email || u.userId}</option>
               ))}
             </select>
             <button onClick={fetchActiveUsers} className="p-2 bg-gray-800 rounded border border-gray-700 hover:bg-gray-700">
@@ -54,7 +55,7 @@ const CameraViewer = () => {
                <div className="flex justify-between items-center">
                   <h3 className="text-lg font-medium text-white flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${stream ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
-                    Live Feed • {users.find(u => u.id === selectedUserId)?.name || selectedUserId}
+                    Live Feed • {users.find(u => (u.userId || u.id) === selectedUserId)?.email || selectedUserId}
                   </h3>
                   {error && <span className="text-red-400 text-sm">{error}</span>}
                </div>

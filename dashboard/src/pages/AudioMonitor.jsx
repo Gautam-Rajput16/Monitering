@@ -8,10 +8,11 @@ const AudioPlayerCard = ({ user }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
   const audioRef = useRef(null);
+  const userId = user.userId || user.id;
 
   // Use the hook to connect audio stream for this specific user
   // This triggers stream-start implicitly on mount
-  const { stream, error } = useStreams(isPlaying ? user.id : null, 'audio');
+  const { stream, error } = useStreams(isPlaying ? userId : null, 'audio');
 
   useEffect(() => {
     if (audioRef.current) {
@@ -39,12 +40,12 @@ const AudioPlayerCard = ({ user }) => {
           <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-xl">
             🎙️
           </div>
-          <div>
-            <h3 className="font-medium text-gray-200">{user.name || user.id}</h3>
-            <p className="text-xs text-gray-400 font-mono">ID: {user.id.slice(0, 8)}...</p>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-medium text-gray-200 truncate">{user.name || user.email || 'Unknown User'}</h3>
+            <p className="text-xs text-gray-400 font-mono truncate" title={userId}>ID: {userId.slice(0, 8)}...</p>
           </div>
         </div>
-        <div className={`w-3 h-3 rounded-full ${stream ? 'bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`} title={stream ? 'Live' : 'Offline'} />
+        <div className={`w-3 h-3 rounded-full shrink-0 ${stream ? 'bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`} title={stream ? 'Live' : 'Offline'} />
       </div>
 
       <div className="space-y-4">
@@ -127,7 +128,7 @@ const AudioMonitor = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {activeUsers.map(user => (
-             <AudioPlayerCard key={user.id} user={user} />
+             <AudioPlayerCard key={user.userId || user.id} user={user} />
           ))}
         </div>
       )}

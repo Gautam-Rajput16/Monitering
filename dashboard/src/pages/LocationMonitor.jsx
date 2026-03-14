@@ -59,7 +59,7 @@ const LocationMonitor = () => {
       
       users.forEach(u => {
         if (u.location) {
-          updateUserLocation(u.id, u.location.latitude, u.location.longitude, Date.now());
+          updateUserLocation(u.userId || u.id, u.location.latitude, u.location.longitude, Date.now());
         }
       });
     } catch (err) {
@@ -102,7 +102,7 @@ const LocationMonitor = () => {
       const data = await apiService.getUserDetails(userId);
       // The interceptor unwraps { success, data: { user } } -> { user }
       const userDetails = data?.user || data;
-      setSelectedUser(userDetails || { id: userId, name: `User ${userId}`, status: 'Active' });
+      setSelectedUser(userDetails || { userId, email: `User ${userId}`, status: 'Active' });
       
       const marker = markersRef.current[userId];
       if (marker) {
@@ -112,7 +112,7 @@ const LocationMonitor = () => {
         });
       }
     } catch (err) {
-      setSelectedUser({ id: userId, name: `User ${userId}`, status: 'Active' });
+      setSelectedUser({ userId, email: `User ${userId}`, status: 'Active' });
     }
   };
 
@@ -134,7 +134,7 @@ const LocationMonitor = () => {
         {selectedUser && (
           <div className="absolute top-4 left-4 w-72 bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg p-5 shadow-2xl z-[1000]">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-bold text-white">{selectedUser.name || 'Unknown User'}</h3>
+              <h3 className="text-lg font-bold text-white">{selectedUser.name || selectedUser.email || 'Unknown User'}</h3>
               <button 
                 onClick={() => setSelectedUser(null)}
                 className="text-gray-400 hover:text-white"
@@ -150,7 +150,7 @@ const LocationMonitor = () => {
               </div>
               <div className="flex justify-between border-b border-gray-800 pb-2">
                 <span className="text-gray-400 text-sm">Device ID</span>
-                <span className="text-gray-200 text-sm font-mono">{selectedUser.id}</span>
+                <span className="text-gray-200 text-sm font-mono truncate ml-2" title={selectedUser.userId}>{selectedUser.userId}</span>
               </div>
               
               <div className="pt-2 flex gap-2">

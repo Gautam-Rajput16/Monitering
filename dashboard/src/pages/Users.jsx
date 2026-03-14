@@ -34,7 +34,8 @@ const Users = () => {
     if (!search) return users;
     return users.filter(user => 
       user.name?.toLowerCase().includes(search.toLowerCase()) || 
-      user.id?.toString().includes(search)
+      user.email?.toLowerCase().includes(search.toLowerCase()) ||
+      user.userId?.toString().includes(search)
     );
   }, [users, search]);
 
@@ -49,7 +50,7 @@ const Users = () => {
         <div className="mb-6">
           <input
             type="text"
-            placeholder="Search users by name or ID..."
+            placeholder="Search users by name, email or ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -61,7 +62,7 @@ const Users = () => {
         ) : filteredUsers.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredUsers.map(user => (
-              <UserCard key={user.id} user={user} />
+              <UserCard key={user.userId || user.id} user={user} />
             ))}
           </div>
         ) : (
