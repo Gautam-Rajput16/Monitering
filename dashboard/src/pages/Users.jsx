@@ -1,12 +1,27 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { apiService } from '../services/apiService';
 import UserCard from '../components/UserCard';
+import { useSocket } from '../hooks/useSocket';
 import { logger } from '../utils/logger';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+
+  // Real-time status updates via sockets
+  useSocket({
+    'user-connected': (data) => {
+      setUsers(prev => prev.map(u => 
+        (u.userId === data.userId) ? { ...u, status: 'online' } : u
+      ));
+    },
+    'user-disconnected': (data) => {
+      setUsers(prev => prev.map(u => 
+        (u.userId === data.userId) ? { ...u, status: 'offline' } : u
+      ));
+    }
+  });
 
   useEffect(() => {
     fetchUsers();
