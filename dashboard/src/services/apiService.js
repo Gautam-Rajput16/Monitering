@@ -28,7 +28,10 @@ apiClient.interceptors.request.use(
 
 // Response Interceptor: Handle global errors (e.g., 401 Unauthorized)
 apiClient.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    // Return only the inner data object if present, otherwise the whole body
+    return response.data?.data || response.data;
+  },
   (error) => {
     logger.error('API Response Error:', error.response?.data || error.message);
     

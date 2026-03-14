@@ -26,14 +26,14 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const users = await apiService.getUsers();
-      if (Array.isArray(users)) {
-        setStats({
-          totalUsers: users.length,
-          activeStreams: Math.floor(users.length / 3) || 0, // Mock metric, ideally from backend API
-          trackingLocations: users.length, // Assuming all active users report location
-        });
-      }
+      const data = await apiService.getUsers();
+      const users = data?.users || (Array.isArray(data) ? data : []);
+      
+      setStats({
+        totalUsers: users.length,
+        activeStreams: Math.floor(users.length / 3) || 0,
+        trackingLocations: users.length,
+      });
     } catch (err) {
       logger.error('Failed to load dashboard stats:', err);
     }

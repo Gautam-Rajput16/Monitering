@@ -16,7 +16,12 @@ const Users = () => {
     setIsLoading(true);
     try {
       const data = await apiService.getUsers();
-      if (Array.isArray(data)) setUsers(data);
+      // Handle paginated structure { users, total, page, pages }
+      if (data && Array.isArray(data.users)) {
+        setUsers(data.users);
+      } else if (Array.isArray(data)) {
+        setUsers(data);
+      }
     } catch (err) {
       logger.error('Failed fetching users', err);
     } finally {

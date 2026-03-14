@@ -53,14 +53,15 @@ const LocationMonitor = () => {
 
   const fetchInitialLocations = async () => {
     try {
-      const users = await apiService.getUsers(); 
-      if (Array.isArray(users)) {
-         users.forEach(u => {
-           if (u.location) {
-             updateUserLocation(u.id, u.location.latitude, u.location.longitude, Date.now());
-           }
-         });
-      }
+      const data = await apiService.getUsers(); 
+      // Handle paginated structure { users, total, page, pages }
+      const users = data?.users || (Array.isArray(data) ? data : []);
+      
+      users.forEach(u => {
+        if (u.location) {
+          updateUserLocation(u.id, u.location.latitude, u.location.longitude, Date.now());
+        }
+      });
     } catch (err) {
       logger.error('Failed to fetch initial locations', err);
     }
@@ -98,7 +99,9 @@ const LocationMonitor = () => {
 
   const handleMarkerClick = async (userId) => {
     try {
-      const userDetails = await apiService.getUserDetails(userId);
+      const data = await apiService.getUserDetails(userId);
+      // The interceptor unwraps { success, data: { user } } -> { user }
+      const userDetails = data?.user || data;
       setSelectedUser(userDetails || { id: userId, name: `User ${userId}`, status: 'Active' });
       
       const marker = markersRef.current[userId];
