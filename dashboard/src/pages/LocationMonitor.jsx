@@ -5,10 +5,20 @@ import { useSocket } from '../hooks/useSocket';
 import { apiService } from '../services/apiService';
 import { logger } from '../utils/logger';
 
-// Make sure to securely load this in production
+// Token will be assigned inside the component to ensure it's picked up correctly
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
 const LocationMonitor = () => {
+  // Defensive check for Mapbox token
+  useEffect(() => {
+    const token = import.meta.env.VITE_MAPBOX_TOKEN;
+    if (token) {
+      mapboxgl.accessToken = token;
+    } else {
+      console.error('Mapbox token is missing! Please check your dashboard/.env file.');
+    }
+  }, []);
+
   const mapContainer = useRef(null);
   const map = useRef(null);
   const markersRef = useRef({});
