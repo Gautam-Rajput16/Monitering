@@ -60,8 +60,9 @@ const LocationMonitor = () => {
       const users = data?.users || (Array.isArray(data) ? data : []);
       
       users.forEach(u => {
-        if (u.location) {
-          updateUserLocation(u.userId || u.id, u.location.latitude, u.location.longitude, Date.now());
+        const loc = u.lastLocation || u.location;
+        if (loc && loc.latitude && loc.longitude) {
+          updateUserLocation(u.userId || u.id, loc.latitude, loc.longitude, loc.timestamp || Date.now());
         }
       });
     } catch (err) {

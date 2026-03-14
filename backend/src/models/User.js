@@ -54,6 +54,12 @@ const userSchema = new mongoose.Schema(
             enum: ['online', 'offline'],
             default: 'offline',
         },
+        lastLocation: {
+            latitude: Number,
+            longitude: Number,
+            accuracy: Number,
+            timestamp: Date,
+        },
     },
     {
         timestamps: true, // createdAt & updatedAt

@@ -37,6 +37,18 @@ const saveLocation = async (data) => {
     // Buffer the write — actual DB insert happens in the next flush cycle
     locationBuffer.add(locationData);
 
+    // Update User model with latest location for quick lookups
+    try {
+        const User = require('../models/User');
+        await User.findOneAndUpdate(
+            { userId },
+            { lastLocation: locationData },
+            { new: true }
+        );
+    } catch (err) {
+        logger.error('Failed to update User lastLocation', { userId, error: err.message });
+    }
+
     logger.debug('Location buffered', { userId, lat: latitude, lng: longitude });
 
     return locationData;
