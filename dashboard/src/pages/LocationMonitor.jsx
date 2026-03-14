@@ -9,15 +9,17 @@ const LocationMonitor = () => {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const markersRef = useRef({});
+  const [trackerCount, setTrackerCount] = useState(0);
   const [selectedUser, setSelectedUser] = useState(null);
 
   // Use our custom socket hook to listen for 'location-update' emitted by the backend
   useSocket({
     'location-update': (data) => {
-      // Data expected structure: { userId, latitude, longitude, timestamp }
+      logger.socket('location-update', data);
       updateUserLocation(data.userId, data.latitude, data.longitude, data.timestamp);
     },
     'user-disconnected': (data) => {
+      logger.socket('user-disconnected', data);
       removeUserMarker(data.userId);
     }
   });
@@ -71,6 +73,7 @@ const LocationMonitor = () => {
     if (markersRef.current[userId]) {
       markersRef.current[userId].remove();
       delete markersRef.current[userId];
+      setTrackerCount(Object.keys(markersRef.current).length);
     }
   };
 
@@ -94,6 +97,7 @@ const LocationMonitor = () => {
         .on('click', () => handleMarkerClick(userId));
 
       markersRef.current[userId] = marker;
+      setTrackerCount(Object.keys(markersRef.current).length);
     }
   };
 
@@ -122,7 +126,7 @@ const LocationMonitor = () => {
         <h1 className="text-2xl font-bold text-gray-100">Live Location Monitor</h1>
         <div className="bg-gray-800 px-4 py-2 rounded-lg text-sm text-gray-300 border border-gray-700">
           <span className="w-2 h-2 inline-block bg-blue-500 rounded-full mr-2 animate-pulse"></span>
-          {Object.keys(markersRef.current).length} Active Trackers
+          {trackerCount} Active Trackers
         </div>
       </div>
       

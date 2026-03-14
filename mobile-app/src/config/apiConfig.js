@@ -15,7 +15,7 @@ import { Platform } from 'react-native';
 // ─── Environment URLs ───────────────────────────────────────────
 const PROD_URL = 'https://spy-backend-yk4g.onrender.com';
 const DEV_URL = (() => {
-  const LOCAL_IP = '10.18.45.167'; // 🚨 Must match your laptop's IPv4
+  const LOCAL_IP = '10.159.5.141'; // 🚨 Must match your laptop's IPv4
   return Platform.select({
     android: `http://${LOCAL_IP}:5000`,
     ios: `http://${LOCAL_IP}:5000`,
