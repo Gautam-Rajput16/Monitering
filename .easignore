@@ -1,0 +1,15 @@
+# Global Ignore for SPY workspace root
+
+# Exclude backend
+backend/
+
+# Exclude dashboard
+dashboard/
+admin-dashboard/
+
+# Exclude root node_modules if they exist
+node_modules/
+.npm/
+
+# Exclude git
+.git/

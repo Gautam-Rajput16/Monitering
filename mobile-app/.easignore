@@ -1,0 +1,23 @@
+# EAS Build Ignore File
+# Ignore everything in the parent directory to prevent monorepo zipping
+../backend/
+../dashboard/
+../.git/
+
+# Ignore local node_modules
+node_modules/
+.npm/
+
+# Ignore local native builds
+android/
+ios/
+
+# Ignore expo generated folders
+.expo/
+dist/
+web-build/
+
+# Ignore env and logs
+*.env*
+*.log
+.DS_Store

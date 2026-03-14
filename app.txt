@@ -1,0 +1,6 @@
+ #Generate preview apk
+ 
+ npx eas-cli build -p android --profile preview
+
+ #Generate production AAB
+ npx eas-cli build -p android --profile production
