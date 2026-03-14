@@ -12,7 +12,7 @@ services:
       - key: PORT
         value: 5000
       - key: CORS_ORIGIN
-        value: *
+        value: "*"
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
